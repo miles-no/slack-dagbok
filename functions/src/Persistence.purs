@@ -29,3 +29,4 @@ loadUserlogEntries :: Deferred => UserId -> Instant -> Promise (List UserlogEntr
 loadUserlogEntries userId ins =
   query "posix" GreaterThan (unsafeToForeign (toMillis ins)) (userLogRef userId)
     |> runQueryParse decodeJson
+

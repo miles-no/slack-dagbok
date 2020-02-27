@@ -1,7 +1,6 @@
 module DataTypes where
 
 import Prelude
-
 import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, encodeJson)
 import Data.Int (floor)
 import Data.Maybe (Maybe)
@@ -27,6 +26,7 @@ type User
   = { userId :: UserId
     , name :: String
     , channel :: String
+    , currentState :: AgentState
     }
 
 type UserlogEntry
@@ -36,7 +36,8 @@ type UserlogEntry
     }
 
 data Message
-  = ChatMessage
+  = NoOp
+  | ChatMessage
     { text :: String
     , userId :: UserId
     , channelId :: String
@@ -51,7 +52,8 @@ data Message
   | Tick { posix :: Instant }
 
 data AgentState
-  = AwaitingMorningGreeting
+  = NewUser
+  | AwaitingMorningGreeting
   | AwaitingAfternoonReminder
 
 instance showUserId :: Show UserId where
