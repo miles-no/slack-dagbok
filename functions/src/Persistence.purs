@@ -33,7 +33,6 @@ loadUserlogEntries userId ins =
 triggersRef :: CollectionReference
 triggersRef = rootCollection "triggers"
 
-
 triggerRef :: String -> DocumentReference
 triggerRef id = triggersRef |> doc id
 

@@ -30,6 +30,7 @@ type User
   = { userId :: UserId
     , name :: String
     , channel :: String
+    , currentState :: AgentState
     }
 
 type UserlogEntry
@@ -39,7 +40,8 @@ type UserlogEntry
     }
 
 data Message
-  = ChatMessage
+  = NoOp
+  | ChatMessage
     { text :: String
     , userId :: UserId
     , channelId :: String
@@ -54,7 +56,8 @@ data Message
   | Tick { posix :: Instant }
 
 data AgentState
-  = AwaitingMorningGreeting
+  = NewUser
+  | AwaitingMorningGreeting
   | AwaitingAfternoonReminder
 
 data TriggerSchedule
