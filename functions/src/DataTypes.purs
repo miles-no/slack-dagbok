@@ -1,13 +1,16 @@
 module DataTypes where
 
 import Prelude
-
-import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, encodeJson)
+import Control.Alt ((<|>))
+import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, encodeJson, getField)
+import Data.Either (Either(..))
+import Data.Functor.Coproduct (left, right)
 import Data.Int (floor)
-import Data.Maybe (Maybe)
+import Data.Interval (millisecond)
+import Data.Maybe (Maybe, maybe)
 import Data.String (drop)
 import Data.String.CodeUnits (dropWhile, takeWhile)
-import DateFormatting (Instant, instant)
+import DateFormatting (Instant, LocalTime(..), Weekday, instant, weekday)
 import Global (readInt)
 import Util ((|>))
 
@@ -54,6 +57,18 @@ data AgentState
   = AwaitingMorningGreeting
   | AwaitingAfternoonReminder
 
+data TriggerSchedule
+  = Never
+  | EveryWeekdayAt LocalTime
+  | EveryGivenWeekday Weekday LocalTime
+
+type Trigger
+  = { triggerId :: String
+    , nextInstant :: Instant
+    , name :: String
+    , schedule :: TriggerSchedule
+    }
+
 instance showUserId :: Show UserId where
   show (UserId id) = "UserId(" <> id <> ")"
 
@@ -71,3 +86,22 @@ instance instantDecoder :: DecodeJson TS where
 
 instance instantEncoder :: EncodeJson TS where
   encodeJson (TS record) = encodeJson ((show record.secs) <> (show record.nanos))
+
+instance triggerScheduleDecoder :: DecodeJson TriggerSchedule where
+  decodeJson json =
+    let
+      maybeNever = decodeJson json >>= (\n -> if n == "never" then Right Never else Left "Only never is valid here")
+
+      maybeEveryDayAt = do
+        o <- decodeJson json
+        at <- getField o "everyWeekdayAt"
+        pure (EveryWeekdayAt (LocalTime at))
+
+      maybeEveryGivenWeekday = do
+        o <- decodeJson json
+        obj <- getField o "everyGivenWeekday"
+        dayOfWeek <- getField o "weekday" |> map weekday
+        at <- getField obj "at"
+        pure (EveryGivenWeekday dayOfWeek (LocalTime at))
+    in
+      maybeNever <|> maybeEveryDayAt <|> maybeEveryGivenWeekday

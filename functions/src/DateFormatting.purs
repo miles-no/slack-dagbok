@@ -3,6 +3,7 @@ module DateFormatting where
 import Prelude
 import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, encodeJson)
 import Data.Int (floor, toNumber)
+import Data.Time.Duration (class Duration)
 import Effect.Promise (class Deferred, Promise)
 import Math (abs)
 import Record (merge)
@@ -211,6 +212,9 @@ year y = Year (clamp 0 3000 y)
 getDate :: ZonedDateTime -> LocalDate
 getDate (ZonedDateTime zdt) = zdt.localDate
 
+getZone :: ZonedDateTime -> TimeZone
+getZone (ZonedDateTime record) = record.zone
+
 yearAsInt :: Year -> Int
 yearAsInt (Year y) = y
 
@@ -332,8 +336,15 @@ getWeeknumber (ZonedDateTime zdt) = floor weeknumber
 
   weeknumber = weeknumberImpl record lt zdt.zone
 
-toZonedDateTime :: Instant -> TimeZone -> ZonedDateTime
-toZonedDateTime (Instant i) tz = toDateTimeImpl construct n tz
+findNextDayAfter :: (ZonedDateTime -> Boolean) -> ZonedDateTime -> ZonedDateTime
+findNextDayAfter pred zdt =
+  let
+    nextDay = toInstant zdt |> append (standardDays 1) |> toZonedDateTime (getZone zdt)
+  in
+    if pred nextDay then nextDay else findNextDayAfter pred nextDay
+
+toZonedDateTime :: TimeZone -> Instant -> ZonedDateTime
+toZonedDateTime tz (Instant i) = toDateTimeImpl construct n tz
   where
   n = toNumber i
 
@@ -349,6 +360,9 @@ toInstant (ZonedDateTime zdt) = instantFromNumber n
     LocalTime l -> l
 
   n = toInstantImpl record lt zdt.zone
+
+append :: Duration -> Instant -> Instant
+append (Duration duration) (Instant origin) = Instant (duration + origin)
 
 now :: Deferred => Unit -> Promise Instant
 now _ = nowImpl unit |> map floor |> map Instant

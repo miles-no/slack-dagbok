@@ -22,7 +22,8 @@
     "firebase-functions": "^3.3.0",
     "google-auth-library": "^5.9.2",
     "googleapis": "^47.0.0",
-    "luxon": "^1.22.0"
+    "luxon": "^1.22.0",
+    "purty": "^5.0.1"
   },
   "devDependencies": {
     "eslint": "^5.12.0",
