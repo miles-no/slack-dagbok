@@ -7,7 +7,7 @@ import Data.Array (cons, foldl)
 import Data.List (List(..), (:))
 import Data.Tuple (Tuple(..), fst, snd)
 import DataTypes (UserId(..), UserlogEntry)
-import DateFormatting (TimeZone, getDay, getHour, getMinute, getMonth, instant, toZonedDateTime)
+import DateFormatting (europe_oslo, getDay, getHour, getMinute, getMonth, instant, toZonedDateTime)
 import Effect.Promise (class Deferred, Promise)
 import Persistence (loadUserlogEntries)
 import Util (leftpad)
@@ -72,19 +72,16 @@ newSlackUserWeek entry = { date: nextdatestr, entries: [ { time: entryTime entry
   where
   nextdatestr = entryDate entry
 
-europe_oslo :: TimeZone
-europe_oslo = "Europe/Oslo"
-
 entryDate :: UserlogEntry -> String
 entryDate entry = datestr
   where
-  zdt = toZonedDateTime entry.posix europe_oslo
+  zdt = toZonedDateTime europe_oslo entry.posix
 
   datestr = (leftpad 2 "0" (show (getDay zdt))) <> "/" <> (leftpad 2 "0" (show (getMonth zdt)))
 
 entryTime :: UserlogEntry -> String
 entryTime entry = timestr
   where
-  zdt = toZonedDateTime entry.posix europe_oslo
+  zdt = toZonedDateTime europe_oslo entry.posix
 
   timestr = (leftpad 2 "0" (show (getHour zdt))) <> ":" <> (leftpad 2 "0" (show (getMinute zdt)))

@@ -1,16 +1,12 @@
 module DataTypes where
 
 import Prelude
-import Control.Alt ((<|>))
-import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, encodeJson, getField)
-import Data.Either (Either(..))
-import Data.Functor.Coproduct (left, right)
+import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, encodeJson)
 import Data.Int (floor)
-import Data.Interval (millisecond)
-import Data.Maybe (Maybe, maybe)
+import Data.Maybe (Maybe)
 import Data.String (drop)
 import Data.String.CodeUnits (dropWhile, takeWhile)
-import DateFormatting (Instant, LocalTime(..), Weekday, instant, weekday)
+import DateFormatting (Instant, LocalTime, Weekday, atHour, atMillisecond, atMinute, atSecond, europe_oslo, findNextDayAfter, getHour, getMillisecond, getMinute, getSecond, getWeekday, instant, isWorkday, toInstant, toZonedDateTime)
 import Global (readInt)
 import Util ((|>))
 
@@ -30,7 +26,6 @@ type User
   = { userId :: UserId
     , name :: String
     , channel :: String
-    , currentState :: AgentState
     }
 
 type UserlogEntry
@@ -55,21 +50,51 @@ data Message
     }
   | Tick { posix :: Instant }
 
-data AgentState
-  = NewUser
-  | AwaitingMorningGreeting
-  | AwaitingAfternoonReminder
-
 data TriggerSchedule
-  = Never
-  | EveryWeekdayAt LocalTime
+  = EveryWeekdayAt LocalTime
   | EveryGivenWeekday Weekday LocalTime
 
-type Trigger
-  = { triggerId :: String
-    , nextInstant :: Instant
+nextTriggerInstant :: Instant -> TriggerSchedule -> Instant
+nextTriggerInstant now (EveryWeekdayAt localTime) =
+  let
+    nowDT = toZonedDateTime europe_oslo now
+
+    nextDt =
+      findNextDayAfter (\ndc -> getWeekday ndc |> isWorkday) nowDT
+        |> atHour (getHour localTime)
+        |> atMinute (getMinute localTime)
+        |> atSecond (getSecond localTime)
+        |> atMillisecond (getMillisecond localTime)
+  in
+    toInstant nextDt
+
+nextTriggerInstant now (EveryGivenWeekday day localTime) =
+  let
+    nowDT = toZonedDateTime europe_oslo now
+
+    nextDt =
+      findNextDayAfter (\ndc -> getWeekday ndc == day) nowDT
+        |> atHour (getHour localTime)
+        |> atMinute (getMinute localTime)
+        |> atSecond (getSecond localTime)
+        |> atMillisecond (getMillisecond localTime)
+  in
+    toInstant nextDt
+
+type TriggerState
+  = { nextInstant :: Instant
     , name :: String
-    , schedule :: TriggerSchedule
+    }
+
+type Trigger
+  = { schedule :: TriggerSchedule
+    , name :: String
+    }
+
+type TriggerWithState
+  = { schedule :: TriggerSchedule
+    , name :: String
+    , nextInstant :: Instant
     }
 
 instance showUserId :: Show UserId where
@@ -89,22 +114,3 @@ instance instantDecoder :: DecodeJson TS where
 
 instance instantEncoder :: EncodeJson TS where
   encodeJson (TS record) = encodeJson ((show record.secs) <> (show record.nanos))
-
-instance triggerScheduleDecoder :: DecodeJson TriggerSchedule where
-  decodeJson json =
-    let
-      maybeNever = decodeJson json >>= (\n -> if n == "never" then Right Never else Left "Only never is valid here")
-
-      maybeEveryDayAt = do
-        o <- decodeJson json
-        at <- getField o "everyWeekdayAt"
-        pure (EveryWeekdayAt (LocalTime at))
-
-      maybeEveryGivenWeekday = do
-        o <- decodeJson json
-        obj <- getField o "everyGivenWeekday"
-        dayOfWeek <- getField o "weekday" |> map weekday
-        at <- getField obj "at"
-        pure (EveryGivenWeekday dayOfWeek (LocalTime at))
-    in
-      maybeNever <|> maybeEveryDayAt <|> maybeEveryGivenWeekday

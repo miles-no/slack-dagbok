@@ -1,8 +1,9 @@
 module Persistence where
 
+import Prelude
 import Data.Argonaut (decodeJson, encodeJson)
 import Data.List (List)
-import DataTypes (User, UserId(..), UserlogEntry, Trigger)
+import DataTypes (User, UserId(..), UserlogEntry, TriggerState)
 import DateFormatting (Instant, toMillis)
 import Effect.Promise (class Deferred, Promise)
 import Firebase (CollectionReference, DocumentReference, QueryOperator(..), addDocument, collection, doc, findAllDocumentParse, query, rootCollection, runQueryParse, setDocument)
@@ -30,11 +31,14 @@ loadUserlogEntries userId ins =
   query "posix" GreaterThan (unsafeToForeign (toMillis ins)) (userLogRef userId)
     |> runQueryParse decodeJson
 
-triggersRef :: CollectionReference
-triggersRef = rootCollection "triggers"
+triggerStatesRef :: CollectionReference
+triggerStatesRef = rootCollection "triggers"
 
-triggerRef :: String -> DocumentReference
-triggerRef id = triggersRef |> doc id
+triggerStateRef :: String -> DocumentReference
+triggerStateRef id = triggerStatesRef |> doc id
 
-triggers :: Deferred => Promise (List Trigger)
-triggers = findAllDocumentParse decodeJson triggersRef
+loadTriggerStates :: Deferred => Promise (List TriggerState)
+loadTriggerStates = findAllDocumentParse decodeJson triggerStatesRef
+
+saveTrigger :: Deferred => TriggerState -> Promise Unit
+saveTrigger trigger = setDocument (encodeJson trigger) (triggerStateRef trigger.name) |> map (\_ -> unit)

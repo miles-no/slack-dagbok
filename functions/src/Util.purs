@@ -2,7 +2,8 @@ module Util where
 
 import Data.Argonaut (class DecodeJson, Json, decodeJson, (.:))
 import Data.Either (Either(..))
-import Data.List (List, findIndex)
+import Data.List (List(..), findIndex, foldl, reverse, (:))
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.String (length)
 import Prelude (class Applicative, class Apply, class Bind, class Eq, class Functor, eq, map, otherwise, (<*>), (<>), (>=), (>>=))
@@ -77,6 +78,18 @@ leftpad n pad str
   | length str >= n = str
   | otherwise = leftpad n pad (pad <> str)
 
-infixl 6 applyFunc as <|
+filterMap :: forall a b. (a -> Maybe b) -> List a -> List b
+filterMap f list = reverse res
+  where
+  res =
+    foldl
+      ( \bs a -> case f a of
+          Nothing -> bs
+          Just b -> b : bs
+      )
+      Nil
+      list
 
-infixl 5 pipe as |>
+infixl 7 applyFunc as <|
+
+infixl 4 pipe as |>

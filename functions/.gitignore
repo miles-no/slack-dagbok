@@ -4,3 +4,4 @@ node_modules
 output
 .purs-repl
 .runtimeconfig.json
+.pce-ide-port

@@ -2,8 +2,8 @@ module DateFormatting where
 
 import Prelude
 import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, encodeJson)
+import Data.Either.Nested (at1)
 import Data.Int (floor, toNumber)
-import Data.Time.Duration (class Duration)
 import Effect.Promise (class Deferred, Promise)
 import Math (abs)
 import Record (merge)
@@ -14,6 +14,9 @@ type TimeZone
 
 utc :: String
 utc = "Etc/UTC"
+
+europe_oslo :: TimeZone
+europe_oslo = "Europe/Oslo"
 
 newtype Year
   = Year Int
@@ -48,6 +51,8 @@ instance showMonth :: Show Month where
 
 instance showYear :: Show Year where
   show (Year y) = show y
+
+derive instance eqMonth :: Eq Month
 
 monthNumber :: Month -> Int
 monthNumber = case _ of
@@ -91,6 +96,8 @@ data Weekday
   | Saturday
   | Sunday
 
+derive instance eqWeekday :: Eq Weekday
+
 weekday :: Int -> Weekday
 weekday =
   clamp 1 7
@@ -103,6 +110,13 @@ weekday =
         6 -> Saturday
         _ -> Sunday
 
+isWorkday :: Weekday -> Boolean
+isWorkday Saturday = false
+
+isWorkday Sunday = false
+
+isWorkday _ = true
+
 instance showWeekday :: Show Weekday where
   show Monday = "Monday"
   show Tuesday = "Tuesday"
@@ -114,6 +128,12 @@ instance showWeekday :: Show Weekday where
 
 newtype Instant
   = Instant Int
+
+instance instantEq :: Eq Instant where
+  eq (Instant posixOne) (Instant posixOther) = posixOne == posixOther
+
+instance instantOrd :: Ord Instant where
+  compare (Instant posixOne) (Instant posixOther) = compare posixOne posixOther
 
 newtype Duration
   = Duration Int
@@ -135,6 +155,9 @@ newtype LocalDate
 newtype LocalTime
   = LocalTime { hour :: Int, minute :: Int, second :: Int, millisecond :: Int }
 
+midnight :: LocalTime
+midnight = LocalTime { hour: 0, minute: 0, second: 0, millisecond: 0 }
+
 newtype LocalDateTime
   = LocalDateTime { localDate :: LocalDate, localTime :: LocalTime }
 
@@ -154,6 +177,10 @@ class LocalTimed a where
   getMinute :: a -> Int
   getSecond :: a -> Int
   getMillisecond :: a -> Int
+  atHour :: Int -> a -> a
+  atMinute :: Int -> a -> a
+  atSecond :: Int -> a -> a
+  atMillisecond :: Int -> a -> a
 
 class ZoneAdjustable a where
   atZone :: TimeZone -> a -> ZonedDateTime
@@ -187,18 +214,30 @@ instance localTimeLocalTimed :: LocalTimed LocalTime where
   getMinute (LocalTime lt) = lt.minute
   getSecond (LocalTime lt) = lt.second
   getMillisecond (LocalTime lt) = lt.millisecond
+  atHour hour (LocalTime lt) = LocalTime (merge { hour: clamp 0 23 hour } lt)
+  atMinute minute (LocalTime lt) = LocalTime (merge { minute: clamp 0 59 minute } lt)
+  atSecond second (LocalTime lt) = LocalTime (merge { hour: clamp 0 59 second } lt)
+  atMillisecond millisceond (LocalTime lt) = LocalTime (merge { millisecond: clamp 0 999 millisceond } lt)
 
 instance localDateTimeLocalTimed :: LocalTimed LocalDateTime where
   getHour (LocalDateTime ldt) = getHour ldt.localTime
   getMinute (LocalDateTime ldt) = getMinute ldt.localTime
   getSecond (LocalDateTime ldt) = getSecond ldt.localTime
   getMillisecond (LocalDateTime ldt) = getMillisecond ldt.localTime
+  atHour hour (LocalDateTime ldt) = LocalDateTime (merge { localTime: atHour hour ldt.localTime } ldt)
+  atMinute minute (LocalDateTime ldt) = LocalDateTime (merge { localTime: atMinute minute ldt.localTime } ldt)
+  atSecond second (LocalDateTime ldt) = LocalDateTime (merge { localTime: atSecond second ldt.localTime } ldt)
+  atMillisecond millisecond (LocalDateTime ldt) = LocalDateTime (merge { localTime: atMillisecond millisecond ldt.localTime } ldt)
 
 instance zonedDateTimeLocalTimed :: LocalTimed ZonedDateTime where
   getHour (ZonedDateTime ldt) = getHour ldt.localTime
   getMinute (ZonedDateTime ldt) = getMinute ldt.localTime
   getSecond (ZonedDateTime ldt) = getSecond ldt.localTime
   getMillisecond (ZonedDateTime ldt) = getMillisecond ldt.localTime
+  atHour hour (ZonedDateTime ldt) = ZonedDateTime (merge { localTime: atHour hour ldt.localTime } ldt)
+  atMinute minute (ZonedDateTime ldt) = ZonedDateTime (merge { localTime: atMinute minute ldt.localTime } ldt)
+  atSecond second (ZonedDateTime ldt) = ZonedDateTime (merge { localTime: atSecond second ldt.localTime } ldt)
+  atMillisecond millisecond (ZonedDateTime ldt) = ZonedDateTime (merge { localTime: atMillisecond millisecond ldt.localTime } ldt)
 
 instance ldtZoneAdjustable :: ZoneAdjustable LocalDateTime where
   atZone zone (LocalDateTime ldt) = ZonedDateTime (merge ldt { zone: zone })
@@ -339,7 +378,7 @@ getWeeknumber (ZonedDateTime zdt) = floor weeknumber
 findNextDayAfter :: (ZonedDateTime -> Boolean) -> ZonedDateTime -> ZonedDateTime
 findNextDayAfter pred zdt =
   let
-    nextDay = toInstant zdt |> append (standardDays 1) |> toZonedDateTime (getZone zdt)
+    nextDay = toInstant zdt |> appendDuration (standardDays 1) |> toZonedDateTime (getZone zdt)
   in
     if pred nextDay then nextDay else findNextDayAfter pred nextDay
 
@@ -361,8 +400,14 @@ toInstant (ZonedDateTime zdt) = instantFromNumber n
 
   n = toInstantImpl record lt zdt.zone
 
-append :: Duration -> Instant -> Instant
-append (Duration duration) (Instant origin) = Instant (duration + origin)
+appendDuration :: Duration -> Instant -> Instant
+appendDuration (Duration duration) (Instant origin) = Instant (duration + origin)
+
+isBefore :: Instant -> Instant -> Boolean
+isBefore at time = time < at
+
+isAfter :: Instant -> Instant -> Boolean
+isAfter at time = time > at
 
 now :: Deferred => Unit -> Promise Instant
 now _ = nowImpl unit |> map floor |> map Instant
