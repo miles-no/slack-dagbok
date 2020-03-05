@@ -17,7 +17,7 @@ const slackInteractions = createMessageAdapter(slackSigningSecret);
 
 const listener = slackEvents.requestListener()
 const interactionListener = slackInteractions.requestListener()
-var storeduser = { name: "", channelId: "" }
+
 const index_js_1 = require("./output/Main/index.js");
 
 slackEvents.on('error', (error) => {
@@ -51,9 +51,9 @@ exports.onMessage = functions.https.onRequest(async (request, response) => {
         interactionListener(request, response)
     }
     else {
-        await index_js_1.handleIncoming()("tick")({
+        /*await index_js_1.handleIncoming()("tick")({
             tick: Date.now()
-        });
+        });*/
         listener(request, response)
     }
 

@@ -24,4 +24,4 @@ exports.weeknumberImpl = localdate => localtime => timezone =>
 
 exports.toInstantImpl = localdate => localtime => timezone =>
   DateTime.local(localdate.year, localdate.month, localdate.day, localtime.hour, localtime.minute, localtime.second, localtime.millisecond)
-    .setZone(timezone).toMillis
+    .setZone(timezone).toMillis()
