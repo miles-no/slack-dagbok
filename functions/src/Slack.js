@@ -15,6 +15,48 @@ exports.doUserInfo = async userId => {
    }
 }
 
+exports.doOpenSheetInModal = userId => {
+   return web.views.open({
+      type: 'modal',
+      title: {
+         type: 'plain_text',
+         text: 'Create a stickie note'
+      },
+      submit: {
+         type: 'plain_text',
+         text: 'Create',
+         value: "c"
+      },
+      blocks: [
+         {
+            "type": "section",
+            "text": {
+               "type": "plain_text",
+               "text": "Enter the id of sheet (you can find it in the url of the sheet)"
+            }
+         },
+
+         {
+            "type": "input",
+            "block_id": "sheet_id_modal",
+            "label": {
+               "type": "plain_text",
+               "text": "Sheet ID"
+            },
+            "element": {
+               "action_id": "content",
+               "type": "plain_text_input",
+               "placeholder": {
+                  "type": "plain_text",
+                  "text": "Take a note... \n(Text longer than 3000 characters will be truncated!)"
+               },
+               "multiline": false
+            }
+         },
+      ]
+   })
+}
+
 exports.doViewPublish = userId => entries => {
 
    console.log("Updating home ", entries)

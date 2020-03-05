@@ -8,8 +8,6 @@ exports.nowImpl = () => new Promise((res, rej) => res(Date.now()))
 
 
 exports.toDateTimeImpl = constructor => instant => timezone => {
-  console.log("Input to Luxor", instant)
-  console.log("Input to Luxor", timezone)
   const m = DateTime.fromMillis(instant).setZone(timezone)
   return constructor(m.year)(m.month)(m.day)(m.hour)(m.minute)(m.second)(m.millisecond)
 }

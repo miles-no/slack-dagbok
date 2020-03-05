@@ -7,7 +7,7 @@ import Data.Array (cons, foldl)
 import Data.List (List(..), (:))
 import Data.Tuple (Tuple(..), fst, snd)
 import DataTypes (UserId(..), UserlogEntry)
-import DateFormatting (europe_oslo, getDay, getHour, getMinute, getMonth, instant, toZonedDateTime, atEpoch)
+import DateFormatting (europe_oslo, getDay, getHour, getMinute, getMonth, toZonedDateTime, atEpoch)
 import Effect.Promise (class Deferred, Promise)
 import Persistence (loadUserlogEntries)
 import Util (leftpad)
@@ -35,6 +35,8 @@ type SlackUserlogEntry
 foreign import postMessage :: SlackMessage -> Promise Unit
 
 foreign import doUserInfo :: String -> Promise SlackUser
+
+foreign import doOpenSheetInModal :: String -> Promise Unit
 
 userInfo :: UserId -> Promise SlackUser
 userInfo (UserId userId) = doUserInfo userId
