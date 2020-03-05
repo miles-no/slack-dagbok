@@ -29,7 +29,7 @@ slackEvents.on('error', (error) => {
 
 slackEvents.on('message', async (msg) => {
     await index_js_1.handleIncoming()("message")(msg);
- 
+
 })
 
 slackEvents.on('app_home_opened', async (event) => {
@@ -50,12 +50,25 @@ exports.onMessage = functions.https.onRequest(async (request, response) => {
     else if (request.body.payload) {
         interactionListener(request, response)
     }
-    else
+    else {
+        await index_js_1.handleIncoming()("tick")({
+            tick: Date.now()
+        });
         listener(request, response)
+    }
+
 
 });
 
 
+
+exports.scheduledFunction = functions.pubsub.schedule('every 5 minutes').onRun((context) => {
+
+    index_js_1.handleIncoming()("tick")({
+        tick: Date.now()
+    });
+    return null;
+});
 
 /*
 //Sheets integration

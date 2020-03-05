@@ -7,7 +7,7 @@ import Data.Array (cons, foldl)
 import Data.List (List(..), (:))
 import Data.Tuple (Tuple(..), fst, snd)
 import DataTypes (UserId(..), UserlogEntry)
-import DateFormatting (europe_oslo, getDay, getHour, getMinute, getMonth, instant, toZonedDateTime)
+import DateFormatting (europe_oslo, getDay, getHour, getMinute, getMonth, instant, toZonedDateTime, atEpoch)
 import Effect.Promise (class Deferred, Promise)
 import Persistence (loadUserlogEntries)
 import Util (leftpad)
@@ -43,7 +43,7 @@ foreign import doViewPublish :: String -> Array SlackUserWeek -> Promise Unit
 
 viewPublish :: Deferred => UserId -> Promise Unit
 viewPublish (UserId userId) = do
-  entries <- loadUserlogEntries (UserId userId) (instant 0)
+  entries <- loadUserlogEntries (UserId userId) atEpoch
   _ <- Console.info "Entries" (encodeJson entries)
   _ <- doViewPublish userId (groupEntries entries)
   pure unit

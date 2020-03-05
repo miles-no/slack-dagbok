@@ -2,10 +2,8 @@ module DateFormatting where
 
 import Prelude
 import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, encodeJson)
-import Data.Either.Nested (at1)
 import Data.Int (floor, toNumber)
 import Effect.Promise (class Deferred, Promise)
-import Math (abs)
 import Record (merge)
 import Util ((|>))
 
@@ -127,7 +125,10 @@ instance showWeekday :: Show Weekday where
   show Sunday = "Sunday"
 
 newtype Instant
-  = Instant Int
+  = Instant Number
+
+atEpoch :: Instant
+atEpoch = instant 0.0
 
 instance instantEq :: Eq Instant where
   eq (Instant posixOne) (Instant posixOther) = posixOne == posixOther
@@ -136,7 +137,7 @@ instance instantOrd :: Ord Instant where
   compare (Instant posixOne) (Instant posixOther) = compare posixOne posixOther
 
 newtype Duration
-  = Duration Int
+  = Duration Number
 
 type DurationUnits
   = { standardDays :: Int
@@ -263,16 +264,13 @@ localDate rec = LocalDate { year: year rec.year, month: month rec.month, day: re
 localTime :: { hour :: Int, minute :: Int, second :: Int, millisecond :: Int } -> LocalTime
 localTime fields = LocalTime fields
 
-instantFromNumber :: Number -> Instant
-instantFromNumber = abs >>> floor >>> Instant
+instant :: Number -> Instant
+instant n = if n < 0.0 then Instant (-n) else Instant n
 
-instant :: Int -> Instant
-instant n = if n < 0 then Instant (-n) else Instant n
-
-toMillis :: Instant -> Int
+toMillis :: Instant -> Number
 toMillis (Instant millis) = millis
 
-millisecondsIn :: Duration -> Int
+millisecondsIn :: Duration -> Number
 millisecondsIn (Duration m) = m
 
 asEpochOffset :: Instant -> Duration
@@ -281,17 +279,14 @@ asEpochOffset (Instant millis) = milliseconds millis
 fromEpochOffset :: Duration -> Instant
 fromEpochOffset (Duration duration) = Instant duration
 
-milliseconds :: Int -> Duration
+milliseconds :: Number -> Duration
 milliseconds m = Duration m
 
-millisFromNumber :: Number -> Duration
-millisFromNumber = floor >>> milliseconds
-
 seconds :: Int -> Duration
-seconds s = Duration (s * 1000)
+seconds s = Duration ((toNumber s) * 1000.0)
 
 secondsIn :: Duration -> Int
-secondsIn (Duration d) = d / 1000
+secondsIn (Duration d) = floor (d / 1000.0)
 
 minutes :: Int -> Duration
 minutes m = seconds (m * 60)
@@ -333,7 +328,7 @@ unitsIn d = { standardDays: days, hours: hrs, minutes: mins, seconds: secs, mill
 
   remainingMillis = remainingSecs <> (negateDuration (seconds secs))
 
-  mills = millisecondsIn remainingMillis
+  mills = floor (millisecondsIn remainingMillis)
 
 isLeapYear :: Year -> Boolean
 isLeapYear (Year y') = (mod y' 4 == 0) && ((mod y' 400 == 0) || not (mod y' 100 == 0))
@@ -383,15 +378,13 @@ findNextDayAfter pred zdt =
     if pred nextDay then nextDay else findNextDayAfter pred nextDay
 
 toZonedDateTime :: TimeZone -> Instant -> ZonedDateTime
-toZonedDateTime tz (Instant i) = toDateTimeImpl construct n tz
+toZonedDateTime tz (Instant i) = toDateTimeImpl construct i tz
   where
-  n = toNumber i
-
   construct :: Int -> Int -> Int -> Int -> Int -> Int -> Int -> ZonedDateTime
   construct y m d hour min sec milli = ZonedDateTime { localDate: LocalDate { year: year y, month: month m, day: d }, localTime: localTime { hour: hour, minute: min, second: sec, millisecond: milli }, zone: tz }
 
 toInstant :: ZonedDateTime -> Instant
-toInstant (ZonedDateTime zdt) = instantFromNumber n
+toInstant (ZonedDateTime zdt) = instant n
   where
   record = { year: yearAsInt (getYear zdt.localDate), month: monthNumber (getMonth zdt.localDate), day: (getDay zdt.localDate) }
 
@@ -410,7 +403,7 @@ isAfter :: Instant -> Instant -> Boolean
 isAfter at time = time > at
 
 now :: Deferred => Unit -> Promise Instant
-now _ = nowImpl unit |> map floor |> map Instant
+now _ = nowImpl unit |> map Instant
 
 instance instantDecoder :: DecodeJson Instant where
   decodeJson json = decodeJson json |> map Instant

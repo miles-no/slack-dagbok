@@ -1,8 +1,9 @@
 module Decoders where
 
-import Data.Either (Either(..))
 import Data.Argonaut
+import Data.Either (Either(..))
 import DataTypes (Message(..))
+import DateFormatting (instant)
 import Prelude (map, (<>), bind, pure)
 import Util ((|>))
 
@@ -19,5 +20,10 @@ decodeIncoming "message" json = do
   pure (ChatMessage { text: text, userId: userId, channelId: channelId, botId: botId, ts: ts })
 
 decodeIncoming "error" json = Left (stringify json)
+
+decodeIncoming "tick" json = do
+  obj <- decodeJson json
+  t <- getField obj "tick"
+  pure (Tick { posix: instant t })
 
 decodeIncoming any value = Left ("No handler for message of type " <> any)

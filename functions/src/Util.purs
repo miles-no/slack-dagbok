@@ -6,7 +6,9 @@ import Data.List (List(..), findIndex, foldl, reverse, (:))
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.String (length)
-import Prelude (class Applicative, class Apply, class Bind, class Eq, class Functor, eq, map, otherwise, (<*>), (<>), (>=), (>>=))
+import Data.Traversable (class Traversable, sequence)
+import Effect.Promise (class Deferred, Promise)
+import Prelude (class Applicative, class Apply, class Bind, class Eq, class Functor, Unit, eq, map, otherwise, unit, (<*>), (<>), (>=), (>>=))
 
 type DecodeFunction a
   = Json -> Either String a
@@ -89,6 +91,9 @@ filterMap f list = reverse res
       )
       Nil
       list
+
+joinPromises :: forall t. Deferred => Traversable t => t (Promise Unit) -> Promise Unit
+joinPromises t = sequence t |> map (\_ -> unit)
 
 infixl 7 applyFunc as <|
 

@@ -19,6 +19,9 @@ userRef (UserId userId) = usersRef |> doc userId
 updateUser :: User -> Promise DocumentReference
 updateUser user = setDocument (encodeJson user) (userRef user.userId)
 
+loadUsers :: Deferred => Promise (List User)
+loadUsers = findAllDocumentParse decodeJson usersRef
+
 userLogRef :: UserId -> CollectionReference
 userLogRef userId = userRef userId |> collection "log"
 

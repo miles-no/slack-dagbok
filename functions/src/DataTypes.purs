@@ -2,7 +2,6 @@ module DataTypes where
 
 import Prelude
 import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, encodeJson)
-import Data.Int (floor)
 import Data.Maybe (Maybe)
 import Data.String (drop)
 import Data.String.CodeUnits (dropWhile, takeWhile)
@@ -14,7 +13,7 @@ newtype UserId
   = UserId String
 
 tsToInstant :: TS -> Instant
-tsToInstant (TS { secs, nanos }) = instant (floor secs * 1000)
+tsToInstant (TS { secs, nanos }) = instant (secs * 1000.0)
 
 newtype TS
   = TS
