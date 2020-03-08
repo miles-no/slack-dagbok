@@ -1,8 +1,6 @@
 module Slack where
 
 import Prelude
-import Console as Console
-import Data.Argonaut (encodeJson)
 import Data.Array (cons, foldl)
 import Data.List (List(..), (:))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -46,7 +44,6 @@ foreign import doViewPublish :: String -> Array SlackUserWeek -> Promise Unit
 viewPublish :: Deferred => UserId -> Promise Unit
 viewPublish (UserId userId) = do
   entries <- loadUserlogEntries (UserId userId) atEpoch
-  _ <- Console.info "Entries" (encodeJson entries)
   _ <- doViewPublish userId (groupEntries entries)
   pure unit
 

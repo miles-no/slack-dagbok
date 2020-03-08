@@ -4,6 +4,7 @@ import Prelude
 import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, encodeJson)
 import Data.Int (floor, toNumber)
 import Effect.Promise (class Deferred, Promise)
+import Math as Math
 import Record (merge)
 import Util ((|>))
 
@@ -139,6 +140,12 @@ instance instantOrd :: Ord Instant where
 newtype Duration
   = Duration Number
 
+instance durationEq :: Eq Duration where
+  eq (Duration posixOne) (Duration posixOther) = posixOne == posixOther
+
+instance durationOrd :: Ord Duration where
+  compare (Duration posixOne) (Duration posixOther) = compare posixOne posixOther
+
 type DurationUnits
   = { standardDays :: Int
     , hours :: Int
@@ -156,14 +163,23 @@ newtype LocalDate
 newtype LocalTime
   = LocalTime { hour :: Int, minute :: Int, second :: Int, millisecond :: Int }
 
+instance showLocalTime :: Show LocalTime where
+  show (LocalTime lt) = "LocalTime" <> show lt
+
 midnight :: LocalTime
 midnight = LocalTime { hour: 0, minute: 0, second: 0, millisecond: 0 }
 
 newtype LocalDateTime
   = LocalDateTime { localDate :: LocalDate, localTime :: LocalTime }
 
+instance showLocalDate :: Show LocalDate where
+  show (LocalDate lt) = "LocalDate" <> show lt
+
 newtype ZonedDateTime
   = ZonedDateTime { localDate :: LocalDate, localTime :: LocalTime, zone :: TimeZone }
+
+instance showLocalDateTime :: Show ZonedDateTime where
+  show (ZonedDateTime lt) = "ZonedDateTime" <> show lt
 
 class Dated a where
   getDay :: a -> Int
@@ -217,7 +233,7 @@ instance localTimeLocalTimed :: LocalTimed LocalTime where
   getMillisecond (LocalTime lt) = lt.millisecond
   atHour hour (LocalTime lt) = LocalTime (merge { hour: clamp 0 23 hour } lt)
   atMinute minute (LocalTime lt) = LocalTime (merge { minute: clamp 0 59 minute } lt)
-  atSecond second (LocalTime lt) = LocalTime (merge { hour: clamp 0 59 second } lt)
+  atSecond second (LocalTime lt) = LocalTime (merge { second: clamp 0 59 second } lt)
   atMillisecond millisceond (LocalTime lt) = LocalTime (merge { millisecond: clamp 0 999 millisceond } lt)
 
 instance localDateTimeLocalTimed :: LocalTimed LocalDateTime where
@@ -395,6 +411,9 @@ toInstant (ZonedDateTime zdt) = instant n
 
 appendDuration :: Duration -> Instant -> Instant
 appendDuration (Duration duration) (Instant origin) = Instant (duration + origin)
+
+durationBetween :: Instant -> Instant -> Duration
+durationBetween (Instant one) (Instant other) = milliseconds (Math.abs (one - other))
 
 isBefore :: Instant -> Instant -> Boolean
 isBefore at time = time < at

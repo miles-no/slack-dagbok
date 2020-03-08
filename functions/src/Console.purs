@@ -6,3 +6,4 @@ import Effect.Promise (Promise)
 
 foreign import info :: String -> Json -> Promise Unit
 foreign import error :: String -> Json -> Promise Unit
+

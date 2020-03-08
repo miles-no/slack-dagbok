@@ -21,12 +21,10 @@ handleEvent :: Deferred => Message -> Promise Unit
 handleEvent NoOp = pure unit
 
 handleEvent (ChatMessage record) = do
-  _ <- info "Message" (encodeJson record)
   _ <- addUserlogEntry record.userId { userId: record.userId, text: record.text, posix: tsToInstant record.ts }
   pure unit
 
 handleEvent (AppHomeOpened record) = do
-  _ <- info "AppHomeOpened" (encodeJson record)
   user <- userInfo record.user
   _ <- updateUser { userId: record.user, name: user.name, channel: record.channel }
   _ <- viewPublish record.user
@@ -40,13 +38,16 @@ handleEvent (Tick now) = do
     |> sequence
     |> map (\_ -> unit)
 
+handleEvent (Action record) = do
+  info "Action" (encodeJson record)
+
 shallExeute :: Instant -> TriggerWithState -> Boolean
 shallExeute now trigger = isAfter trigger.nextInstant now
 
 triggers :: List Trigger
 triggers =
-  { name: "morning_greeting", schedule: (EveryWeekdayAt (localTime { hour: 8, minute: 15, second: 0, millisecond: 0 })) }
-    : { name: "afternoon_reminder", schedule: (EveryWeekdayAt (localTime { hour: 15, minute: 50, second: 0, millisecond: 0 })) }
+  { name: "morning_greeting", schedule: (EveryWorkdayAt (localTime { hour: 8, minute: 15, second: 0, millisecond: 0 })) }
+    : { name: "afternoon_reminder", schedule: (EveryWorkdayAt (localTime { hour: 15, minute: 50, second: 0, millisecond: 0 })) }
     : Nil
 
 stateOfTrigger :: (Map String TriggerState) -> Trigger -> TriggerWithState

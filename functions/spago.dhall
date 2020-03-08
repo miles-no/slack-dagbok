@@ -11,7 +11,8 @@ You can edit this file as you like.
   , "maybe"
   , "promises"
   , "psci-support"
+  ,"debug"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs" ]
+, sources = [ "src/**/*.purs"]
 }

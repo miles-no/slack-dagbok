@@ -4,7 +4,7 @@ import Data.Argonaut
 import Data.Either (Either(..))
 import DataTypes (Message(..))
 import DateFormatting (instant)
-import Prelude (map, (<>), bind, pure)
+import Prelude (bind, map, pure, (<>))
 import Util ((|>))
 
 decodeIncoming :: String -> Json -> Either String Message
@@ -25,5 +25,11 @@ decodeIncoming "tick" json = do
   obj <- decodeJson json
   t <- getField obj "tick"
   pure (Tick { posix: instant t })
+
+decodeIncoming "action" json = do
+  obj <- decodeJson json
+  id <- getField obj "action_id"
+  v <- getField obj "value"
+  pure (Action { id: id, value: v })
 
 decodeIncoming any value = Left ("No handler for message of type " <> any)

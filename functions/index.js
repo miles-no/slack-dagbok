@@ -37,8 +37,9 @@ slackEvents.on('app_home_opened', async (event) => {
 })
 
 
-slackInteractions.action({ type: 'button' }, (payload, respond) => {
+slackInteractions.action({ type: 'button' }, async (payload, respond) => {
     console.log(payload)
+    await index_js_1.handleIncoming()("action")(payload.actions[0]);
 })
 
 
