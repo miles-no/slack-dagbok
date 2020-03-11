@@ -8,7 +8,6 @@ import Data.String.CodeUnits (dropWhile, takeWhile)
 import DateFormatting (Instant, LocalTime, Weekday, atHour, atMillisecond, atMinute, atSecond, europe_oslo, findNextDayAfter, getHour, getMillisecond, getMinute, getSecond, getWeekday, instant, isWorkday, toInstant, toZonedDateTime)
 import Global (readInt)
 import Util ((|>))
-import Debug.Trace as Trace
 
 newtype UserId
   = UserId String
@@ -58,7 +57,7 @@ data TriggerSchedule
 nextTriggerInstant :: Instant -> TriggerSchedule -> Instant
 nextTriggerInstant now (EveryWorkdayAt scheduledTime) =
   let
-    nowDT = toZonedDateTime europe_oslo now
+    nowDT = (toZonedDateTime europe_oslo now)
 
     nextDt =
       nowDT
@@ -68,7 +67,7 @@ nextTriggerInstant now (EveryWorkdayAt scheduledTime) =
         |> atSecond  (getSecond scheduledTime)
         |> atMillisecond  (getMillisecond scheduledTime)
   in
-    toInstant nextDt
+    toInstant ( nextDt)
 
 nextTriggerInstant now (EveryGivenWeekday day localTime) =
   let
