@@ -2,7 +2,7 @@ module NextDateTimeSpec where
 
 import Prelude
 import DataTypes (TriggerSchedule(..), nextTriggerInstant)
-import DateFormatting (Instant, durationBetween, europe_oslo, getHour, getMillisecond, getMinute, getSecond, getWeekday, hoursIn, instant, localTime, standardDays, toZonedDateTime)
+import DateFormatting (Instant, durationBetween, europe_oslo, getHour, getMillisecond, getMinute, getSecond, getWeekday, hoursIn, instant, localTime, standardDays, toZonedDateTime, utc)
 import Test.QuickCheck (class Arbitrary, (<?>), (===))
 import Test.QuickCheck.Gen (choose)
 import Test.Spec (Spec, describe, it)
@@ -23,7 +23,7 @@ instance randInstant :: Arbitrary RandInstant where
 
 spec :: Spec Unit
 spec =
-  describe "Math" do
+  describe "nextTriggerInstant" do
     it "is always on the scheduled time"
       $ quickCheck \(RandInstant instant) ->
           let
@@ -51,4 +51,14 @@ spec =
 
             maxDistance = standardDays 4
           in
-            (distance < maxDistance) == true <?> "The next instant must never be more than " <> show (hoursIn maxDistance) <> " later ,but is" <> show (hoursIn distance) <> "hours " <> show (getWeekday nowDT) <> " - " <> show (getWeekday nextDt)
+            (distance < maxDistance) == true <?> " The next instant must never be more than " <> show (hoursIn maxDistance) <> " later ,but is" <> show (hoursIn distance) <> "hours " <> show (getWeekday nowDT) <> " - " <> show (getWeekday nextDt)
+    it "europe/oslo is always an hour or two before utc"
+      $ quickCheck \(RandInstant i) ->
+          let
+            dtOslo = toZonedDateTime europe_oslo i
+
+            dtUtc = toZonedDateTime utc i
+
+            diff = (getHour dtOslo) - getHour dtUtc
+          in
+            ((diff >= 1 && diff <= 2) || (diff >= -23 && diff <= -22)) <?> show diff <> "\n -" <> (show dtOslo <> " \n -" <> show dtUtc)

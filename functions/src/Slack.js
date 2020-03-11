@@ -74,29 +74,29 @@ exports.doViewPublish = userId => entries => {
       view: {
          "type": "home",
          "blocks": sections.concat([
-            {
-               "type": "actions",
-               "elements": [
-                  {
-                     "type": "button",
-                     "text": {
-                        "type": "plain_text",
-                        "text": "Action A",
-                        "emoji": true
-                     },
-                     value: "b"
-                  },
-                  {
-                     "type": "button",
-                     "text": {
-                        "type": "plain_text",
-                        "text": "Action B",
-                        "emoji": true
-                     },
-                     value: "c"
-                  }
-               ]
-            }
+            /*{
+   "type": "actions",
+   "elements": [
+      {
+         "type": "button",
+         "text": {
+            "type": "plain_text",
+            "text": "Action A",
+            "emoji": true
+         },
+         value: "b"
+      },
+      {
+         "type": "button",
+         "text": {
+            "type": "plain_text",
+            "text": "Action B",
+            "emoji": true
+         },
+         value: "c"
+      }
+   ]
+}*/
          ])
       }
    })
