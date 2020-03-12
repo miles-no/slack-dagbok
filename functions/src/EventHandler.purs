@@ -22,12 +22,12 @@ handleEvent NoOp = pure unit
 
 handleEvent (ChatMessage record) = do
   _ <- addUserlogEntry record.userId { userId: record.userId, text: record.text, posix: tsToInstant record.ts }
+  _ <- viewPublish record.userId
   pure unit
 
 handleEvent (AppHomeOpened record) = do
   user <- userInfo record.user
   _ <- updateUser { userId: record.user, name: user.name, channel: record.channel }
-  _ <- viewPublish record.user
   pure unit
 
 handleEvent (Tick now) = do
