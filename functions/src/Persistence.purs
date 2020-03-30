@@ -1,12 +1,13 @@
 module Persistence where
 
 import Prelude
+
 import Data.Argonaut (decodeJson, encodeJson)
 import Data.List (List)
-import DataTypes (User, UserId(..), UserlogEntry, TriggerState)
+import DataTypes (TriggerState, User, UserId(..), UserlogEntry, userDecoder)
 import DateFormatting (Instant, toMillis)
 import Effect.Promise (class Deferred, Promise)
-import Firebase (CollectionReference, DocumentReference, QueryOperator(..), addDocument, collection, doc, findAllDocumentParse, query, rootCollection, runQueryParse, setDocument)
+import Firebase (CollectionReference, DocumentReference, QueryOperator(..), addDocument, collection, deleteCollection, doc, findAllDocumentParse, getDocumentParse, query, rootCollection, runQueryParse, setDocument)
 import Foreign (unsafeToForeign)
 import Util ((|>))
 
@@ -20,7 +21,11 @@ updateUser :: User -> Promise DocumentReference
 updateUser user = setDocument (encodeJson user) (userRef user.userId)
 
 loadUsers :: Deferred => Promise (List User)
-loadUsers = findAllDocumentParse decodeJson usersRef
+loadUsers = findAllDocumentParse userDecoder usersRef
+
+loadUser :: Deferred => UserId -> Promise ( User)
+loadUser userId = getDocumentParse userDecoder (userRef userId)
+
 
 userLogRef :: UserId -> CollectionReference
 userLogRef userId = userRef userId |> collection "log"
@@ -33,6 +38,10 @@ loadUserlogEntries :: Deferred => UserId -> Instant -> Promise (List UserlogEntr
 loadUserlogEntries userId ins =
   query "posix" GreaterThan (unsafeToForeign (toMillis ins)) (userLogRef userId)
     |> runQueryParse decodeJson
+
+deleteUserLogEntries :: Deferred => UserId -> Promise Unit
+deleteUserLogEntries  userId  =
+  deleteCollection (userLogRef  userId)
 
 triggerStatesRef :: CollectionReference
 triggerStatesRef = rootCollection "triggers"

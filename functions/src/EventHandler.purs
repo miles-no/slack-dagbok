@@ -1,6 +1,7 @@
 module EventHandler where
 
 import Effect.Promise
+
 import Console (info)
 import Data.Argonaut (encodeJson)
 import Data.List (List(..), (:), filter)
@@ -9,9 +10,9 @@ import Data.Maybe (fromMaybe)
 import Data.Symbol (SProxy(..))
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..))
-import DataTypes (Message(..), Trigger, TriggerSchedule(..), TriggerState, TriggerWithState, User, nextTriggerInstant, tsToInstant)
+import DataTypes (Action(..), Message(..), Trigger, TriggerSchedule(..), TriggerState, TriggerWithState, User, UserId(..), nextTriggerInstant, tsToInstant)
 import DateFormatting (Instant, atEpoch, isAfter, localTime)
-import Persistence (addUserlogEntry, loadTriggerStates, loadUsers, saveTrigger, updateUser)
+import Persistence (addUserlogEntry, deleteUserLogEntries, loadTriggerStates, loadUser, loadUsers, saveTrigger, updateUser)
 import Prelude (Unit, bind, map, pure, unit, (<>))
 import Record (merge, delete)
 import Slack (postMessage, userInfo, viewPublish)
@@ -27,7 +28,7 @@ handleEvent (ChatMessage record) = do
 
 handleEvent (AppHomeOpened record) = do
   user <- userInfo record.user
-  _ <- updateUser { userId: record.user, name: user.name, channel: record.channel }
+  _ <- updateUser { userId: record.user, name: user.name, channel: record.channel,active:true }
   pure unit
 
 handleEvent (Tick now) = do
@@ -38,9 +39,25 @@ handleEvent (Tick now) = do
     |> sequence
     |> map (\_ -> unit)
 
-handleEvent (Action record) = do
-  info "Action" (encodeJson record)
+handleEvent (ActionMessage record) = do
+  info "ActionMessage" (encodeJson record)
 
+-- ACTIONS
+handleAction :: Deferred => Action -> Promise Unit
+handleAction (Start record) = do
+  user <- loadUser (UserId record.userId)
+  updateUser (merge {active:true} user) |> map (\_->unit)
+
+handleAction (Stop record) = do
+  user <- loadUser (UserId record.userId)
+  updateUser (merge {active:false} user) |> map (\_->unit)
+
+handleAction (Clear record) = do
+  user <- loadUser (UserId record.userId)
+  deleteUserLogEntries user.userId
+
+
+-- TRIGGERS
 shallExeute :: Instant -> TriggerWithState -> Boolean
 shallExeute now trigger = isAfter trigger.nextInstant now
 

@@ -57,7 +57,7 @@ exports.doOpenSheetInModal = userId => {
    })
 }
 
-exports.doViewPublish = userId => entries => {
+exports.doViewPublish = userId => isActive => entries => {
 
    console.log("Updating home ", entries)
    const sections = entries.map(logentry => (
@@ -69,35 +69,54 @@ exports.doViewPublish = userId => entries => {
          }
 
       }))
+
+   const startOrStopButton =
+      isActive ? stopButton : startButton
+
    return web.views.publish({
-      user_id: userId,
-      view: {
-         "type": "home",
-         "blocks": sections.concat([
-            /*{
-   "type": "actions",
-   "elements": [
-      {
-         "type": "button",
-         "text": {
-            "type": "plain_text",
-            "text": "Action A",
-            "emoji": true
-         },
-         value: "b"
-      },
-      {
-         "type": "button",
-         "text": {
-            "type": "plain_text",
-            "text": "Action B",
-            "emoji": true
-         },
-         value: "c"
-      }
-   ]
-}*/
-         ])
-      }
-   })
+         user_id: userId,
+         view: {
+            "type": "home",
+            "blocks": sections.concat([
+               {
+                  "type": "actions",
+                  "elements": [
+                     startOrStopButton,
+                     clearButton
+                  ]
+               }
+            ])
+         }
+      })
+}
+
+const stopButton = {
+   "type": "button",
+   "text": {
+      "type": "plain_text",
+      "text": "Please do not remind me",
+      "emoji": true
+   },
+   value: "stop"
+}
+
+const startButton =
+{
+   "type": "button",
+   "text": {
+      "type": "plain_text",
+      "text": "Please send me reminders",
+      "emoji": true
+   },
+   value: "start"
+}
+
+const clearButton = {
+   "type": "button",
+   "text": {
+      "type": "plain_text",
+      "text": "Clear all my data",
+      "emoji": true
+   },
+   value: "clear"
 }

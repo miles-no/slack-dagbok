@@ -1,13 +1,14 @@
 module Slack where
 
 import Prelude
+
 import Data.Array (cons, foldl)
 import Data.List (List(..), (:))
 import Data.Tuple (Tuple(..), fst, snd)
 import DataTypes (UserId(..), UserlogEntry)
 import DateFormatting (europe_oslo, getDay, getHour, getMinute, getMonth, toZonedDateTime, atEpoch)
 import Effect.Promise (class Deferred, Promise)
-import Persistence (loadUserlogEntries)
+import Persistence (loadUser, loadUserlogEntries)
 import Util (leftpad)
 
 type SlackMessage
@@ -39,12 +40,13 @@ foreign import doOpenSheetInModal :: String -> Promise Unit
 userInfo :: UserId -> Promise SlackUser
 userInfo (UserId userId) = doUserInfo userId
 
-foreign import doViewPublish :: String -> Array SlackUserWeek -> Promise Unit
+foreign import doViewPublish :: String -> Boolean -> Array SlackUserWeek -> Promise Unit
 
 viewPublish :: Deferred => UserId -> Promise Unit
 viewPublish (UserId userId) = do
   entries <- loadUserlogEntries (UserId userId) atEpoch
-  _ <- doViewPublish userId (groupEntries entries)
+  user <- loadUser (UserId userId) 
+  _ <- doViewPublish userId (user.active) (groupEntries entries)
   pure unit
 
 groupEntries :: List UserlogEntry -> Array SlackUserWeek

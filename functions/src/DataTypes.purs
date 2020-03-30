@@ -1,8 +1,10 @@
 module DataTypes where
 
 import Prelude
-import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, encodeJson)
-import Data.Maybe (Maybe)
+
+import Data.Argonaut (class DecodeJson, class EncodeJson, Json, decodeJson, encodeJson, getField, getFieldOptional, jsonEmptyArray)
+import Data.Either (Either)
+import Data.Maybe (Maybe, fromMaybe)
 import Data.String (drop)
 import Data.String.CodeUnits (dropWhile, takeWhile)
 import DateFormatting (Instant, LocalTime, Weekday, atHour, atMillisecond, atMinute, atSecond, europe_oslo, findNextDayAfter, getHour, getMillisecond, getMinute, getSecond, getWeekday, instant, isWorkday, toInstant, toZonedDateTime)
@@ -25,6 +27,7 @@ type User
   = { userId :: UserId
     , name :: String
     , channel :: String
+    , active :: Boolean
     }
 
 type UserlogEntry
@@ -48,7 +51,12 @@ data Message
     , tab :: String
     }
   | Tick { posix :: Instant }
-  | Action { id :: String, value :: String }
+  | ActionMessage { id :: String, value :: String, userId::String }
+
+data Action
+  = Start {userId::String}
+  | Stop {userId::String}
+  | Clear {userId::String}
 
 data TriggerSchedule
   = EveryWorkdayAt LocalTime
@@ -106,6 +114,15 @@ instance userIdDecoder :: DecodeJson UserId where
 
 instance userIdEncoder :: EncodeJson UserId where
   encodeJson (UserId id) = encodeJson id
+
+userDecoder :: Json -> Either String User 
+userDecoder json = do
+    obj <- decodeJson json
+    userId <- getField obj "userId" 
+    name <- getField obj "name" 
+    channel <- getField obj "channel" 
+    maybeActive <- getFieldOptional obj "active"
+    pure {userId:userId,name:name,channel:channel,active:fromMaybe true maybeActive}
 
 instance instantDecoder :: DecodeJson TS where
   decodeJson json = do

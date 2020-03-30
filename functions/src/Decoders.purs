@@ -30,6 +30,7 @@ decodeIncoming "action" json = do
   obj <- decodeJson json
   id <- getField obj "action_id"
   v <- getField obj "value"
-  pure (Action { id: id, value: v })
+  userId <- getField obj "user"
+  pure (ActionMessage { id: id, value: v, userId: userId })
 
 decodeIncoming any value = Left ("No handler for message of type " <> any)

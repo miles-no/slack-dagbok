@@ -63,9 +63,9 @@ exports.onMessage = functions.https.onRequest(async (request, response) => {
 
 
 
-exports.scheduledFunction = functions.pubsub.schedule('every 5 minutes').onRun((context) => {
+exports.scheduledFunction = functions.pubsub.schedule('every 5 minutes').onRun(async (context) => {
 
-    index_js_1.handleIncoming()("tick")({
+    await index_js_1.handleIncoming()("tick")({
         tick: Date.now()
     });
     return null;

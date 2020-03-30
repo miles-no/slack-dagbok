@@ -147,6 +147,10 @@ runQueryParse parser q =
                 reject (error (fold errors))
         )
 
+foreign import deleteQuery :: Deferred => Query -> Promise Unit
+
+foreign import deleteCollection :: Deferred => CollectionReference -> Promise Unit
+
 foreign import collectionGroup :: String -> Query
 
 foreign import addDocument :: String -> Json -> CollectionReference -> Promise String
