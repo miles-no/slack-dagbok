@@ -20,6 +20,10 @@ exports.weeknumberImpl = localdate => localtime => timezone =>
   DateTime.local(localdate.year, localdate.month, localdate.day, localtime.hour, localtime.minute, localtime.second, localtime.millisecond)
     .setZone(timezone).weekNumber
 
-exports.toInstantImpl = localdate => localtime => timezone =>
-  DateTime.local(localdate.year, localdate.month, localdate.day, localtime.hour, localtime.minute, localtime.second, localtime.millisecond)
-    .setZone(timezone).toMillis()
+exports.toInstantImpl = localdate => localtime => timezone =>{
+  const placed = DateTime.local(localdate.year, localdate.month, localdate.day, localtime.hour, localtime.minute, localtime.second, localtime.millisecond)
+    const local = placed.setZone(timezone)
+    console.log("Local",placed.zone)
+    console.log("Oslo",local.zone)
+    return local.toMillis()
+}
