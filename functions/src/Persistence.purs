@@ -4,10 +4,11 @@ import Prelude
 
 import Data.Argonaut (decodeJson, encodeJson)
 import Data.List (List)
+import Data.Maybe (Maybe)
 import DataTypes (TriggerState, User, UserId(..), UserlogEntry, userDecoder)
 import DateFormatting (Instant, toMillis)
 import Effect.Promise (class Deferred, Promise)
-import Firebase (CollectionReference, DocumentReference, QueryOperator(..), addDocument, collection, deleteCollection, doc, findAllDocumentParse, getDocumentParse, query, rootCollection, runQueryParse, setDocument)
+import Firebase (CollectionReference, DocumentReference, QueryOperator(..), addDocument, collection, deleteCollection, doc, findAllDocumentParse, findDocumentParse, getDocumentParse, query, rootCollection, runQueryParse, setDocument)
 import Foreign (unsafeToForeign)
 import Util ((|>))
 
@@ -25,6 +26,10 @@ loadUsers = findAllDocumentParse userDecoder usersRef
 
 loadUser :: Deferred => UserId -> Promise ( User)
 loadUser userId = getDocumentParse userDecoder (userRef userId)
+
+findUser :: Deferred => UserId -> Promise (Maybe User)
+findUser userId = findDocumentParse userDecoder (userRef userId)
+
 
 
 userLogRef :: UserId -> CollectionReference

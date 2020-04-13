@@ -123,7 +123,7 @@ exports.deleteQuery = query => {
 
 exports.deleteCollection = (collectionReference) => {
     
-    let query = collectionReference.limit(batchSize);
+    let query = collectionReference.limit(100);
 
     return new Promise((resolve, reject) => {
         deleteQueryBatch(db, query, resolve, reject);

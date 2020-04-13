@@ -38,13 +38,15 @@ slackEvents.on('app_home_opened', async (event) => {
 
 
 slackInteractions.action({ type: 'button' }, async (payload, respond) => {
-    console.log(payload)
-    await index_js_1.handleIncoming()("action")(payload.actions[0]);
+    console.log("Button",payload)
+    const action = payload.actions[0]
+    action.user = payload.user.id
+    await index_js_1.handleIncoming()("action")(action);
 })
 
 
 
-exports.onMessage = functions.https.onRequest(async (request, response) => {
+exports.onMessage = functions.https.onRequest( async (request, response) => {
 
     if (request.body.challenge)
         response.send(request.body.challenge)

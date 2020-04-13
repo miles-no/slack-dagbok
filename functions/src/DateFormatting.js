@@ -13,17 +13,42 @@ exports.toDateTimeImpl = constructor => instant => timezone => {
 }
 
 exports.weekdayImpl = localdate => localtime => timezone =>
-  DateTime.local(localdate.year, localdate.month, localdate.day, localtime.hour, localtime.minute, localtime.second, localtime.millisecond)
-    .setZone(timezone).weekday
+  DateTime.fromObject(
+    {
+      year: localdate.year,
+      month: localdate.month,
+      day: localdate.day,
+      hour: localtime.hour,
+      minute: localtime.minute,
+      second: localtime.second,
+      millisecond: localtime.millisecond,
+      zone: timezone
+    }).weekday
 
 exports.weeknumberImpl = localdate => localtime => timezone =>
-  DateTime.local(localdate.year, localdate.month, localdate.day, localtime.hour, localtime.minute, localtime.second, localtime.millisecond)
-    .setZone(timezone).weekNumber
+  DateTime.fromObject(
+    {
+      year: localdate.year,
+      month: localdate.month,
+      day: localdate.day,
+      hour: localtime.hour,
+      minute: localtime.minute,
+      second: localtime.second,
+      millisecond: localtime.millisecond,
+      zone: timezone
+    }).weekNumber
 
-exports.toInstantImpl = localdate => localtime => timezone =>{
-  const placed = DateTime.local(localdate.year, localdate.month, localdate.day, localtime.hour, localtime.minute, localtime.second, localtime.millisecond)
-    const local = placed.setZone(timezone)
-    console.log("Local",placed.zone)
-    console.log("Oslo",local.zone)
-    return local.toMillis()
+exports.toInstantImpl = localdate => localtime => timezone => {
+  const placed = DateTime.fromObject(
+    {
+      year: localdate.year,
+      month: localdate.month,
+      day: localdate.day,
+      hour: localtime.hour,
+      minute: localtime.minute,
+      second: localtime.second,
+      millisecond: localtime.millisecond,
+      zone: timezone
+    })
+  return placed.toMillis()
 }

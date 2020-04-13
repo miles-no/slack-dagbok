@@ -12,7 +12,7 @@ import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..))
 import DataTypes (Action(..), Message(..), Trigger, TriggerSchedule(..), TriggerState, TriggerWithState, User, UserId(..), nextTriggerInstant, tsToInstant)
 import DateFormatting (Instant, atEpoch, isAfter, localTime)
-import Persistence (addUserlogEntry, deleteUserLogEntries, loadTriggerStates, loadUser, loadUsers, saveTrigger, updateUser)
+import Persistence (addUserlogEntry, deleteUserLogEntries, findUser, loadTriggerStates, loadUser, loadUsers, saveTrigger, updateUser)
 import Prelude (Unit, bind, map, pure, unit, (<>))
 import Record (merge, delete)
 import Slack (postMessage, userInfo, viewPublish)
@@ -28,7 +28,8 @@ handleEvent (ChatMessage record) = do
 
 handleEvent (AppHomeOpened record) = do
   user <- userInfo record.user
-  _ <- updateUser { userId: record.user, name: user.name, channel: record.channel,active:true }
+  maybeUser <- findUser (UserId user.userId) 
+  _ <- updateUser { userId: record.user, name: user.name, channel: record.channel,active: maybeUser |> map (\u -> u.active) |> fromMaybe true }
   pure unit
 
 handleEvent (Tick now) = do
@@ -63,8 +64,8 @@ shallExeute now trigger = isAfter trigger.nextInstant now
 
 triggers :: List Trigger
 triggers =
-  { name: "morning_greeting", schedule: (EveryWorkdayAt (localTime { hour: 8, minute: 15, second: 0, millisecond: 0 })) }
-    : { name: "afternoon_reminder", schedule: (EveryWorkdayAt (localTime { hour: 15, minute: 50, second: 0, millisecond: 0 })) }
+  { name: "morning_greeting", schedule: (EveryWorkdayAt (localTime { hour: 8, minute: 5, second: 0, millisecond: 0 })) }
+    : { name: "afternoon_reminder", schedule: (EveryWorkdayAt (localTime { hour: 16, minute: 2, second: 40, millisecond: 0 })) }
     : Nil
 
 stateOfTrigger :: (Map String TriggerState) -> Trigger -> TriggerWithState
