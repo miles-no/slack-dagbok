@@ -1,9 +1,8 @@
 module Persistence where
 
 import Prelude
-
 import Data.Argonaut (decodeJson, encodeJson)
-import Data.List (List)
+import Data.List (List, filter)
 import Data.Maybe (Maybe)
 import DataTypes (TriggerState, User, UserId(..), UserlogEntry, userDecoder)
 import DateFormatting (Instant, toMillis)
@@ -24,13 +23,14 @@ updateUser user = setDocument (encodeJson user) (userRef user.userId)
 loadUsers :: Deferred => Promise (List User)
 loadUsers = findAllDocumentParse userDecoder usersRef
 
-loadUser :: Deferred => UserId -> Promise ( User)
+loadActiveUsers :: Deferred => Promise (List User)
+loadActiveUsers = loadUsers |> map (filter (\user -> user.active))
+
+loadUser :: Deferred => UserId -> Promise (User)
 loadUser userId = getDocumentParse userDecoder (userRef userId)
 
 findUser :: Deferred => UserId -> Promise (Maybe User)
 findUser userId = findDocumentParse userDecoder (userRef userId)
-
-
 
 userLogRef :: UserId -> CollectionReference
 userLogRef userId = userRef userId |> collection "log"
@@ -45,8 +45,7 @@ loadUserlogEntries userId ins =
     |> runQueryParse decodeJson
 
 deleteUserLogEntries :: Deferred => UserId -> Promise Unit
-deleteUserLogEntries  userId  =
-  deleteCollection (userLogRef  userId)
+deleteUserLogEntries userId = deleteCollection (userLogRef userId)
 
 triggerStatesRef :: CollectionReference
 triggerStatesRef = rootCollection "triggers"

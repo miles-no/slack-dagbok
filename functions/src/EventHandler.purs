@@ -1,7 +1,6 @@
 module EventHandler where
 
 import Effect.Promise
-
 import Console (info)
 import Data.Argonaut (encodeJson)
 import Data.List (List(..), (:), filter)
@@ -12,7 +11,7 @@ import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..))
 import DataTypes (Action(..), Message(..), Trigger, TriggerSchedule(..), TriggerState, TriggerWithState, User, UserId(..), nextTriggerInstant, tsToInstant)
 import DateFormatting (Instant, atEpoch, isAfter, localTime)
-import Persistence (addUserlogEntry, deleteUserLogEntries, findUser, loadTriggerStates, loadUser, loadUsers, saveTrigger, updateUser)
+import Persistence (addUserlogEntry, deleteUserLogEntries, findUser, loadTriggerStates, loadUser, loadActiveUsers, saveTrigger, updateUser)
 import Prelude (Unit, bind, map, pure, unit, (<>))
 import Record (merge, delete)
 import Slack (postMessage, userInfo, viewPublish)
@@ -28,14 +27,14 @@ handleEvent (ChatMessage record) = do
 
 handleEvent (AppHomeOpened record) = do
   user <- userInfo record.user
-  maybeUser <- findUser (UserId user.userId) 
-  _ <- updateUser { userId: record.user, name: user.name, channel: record.channel,active: maybeUser |> map (\u -> u.active) |> fromMaybe true }
+  maybeUser <- findUser (UserId user.userId)
+  _ <- updateUser { userId: record.user, name: user.name, channel: record.channel, active: maybeUser |> map (\u -> u.active) |> fromMaybe true }
   pure unit
 
 handleEvent (Tick now) = do
   states <- triggerStatesAsMap
   executingTriggers <- pure ((triggers |> map (stateOfTrigger states)) |> filter (shallExeute now.posix))
-  users <- loadUsers
+  users <- loadActiveUsers
   (executingTriggers |> map (fireTrigger now.posix users)) <> (executingTriggers |> map (nextState now.posix) |> map saveStateOfTrigger)
     |> sequence
     |> map (\_ -> unit)
@@ -47,16 +46,15 @@ handleEvent (ActionMessage record) = do
 handleAction :: Deferred => Action -> Promise Unit
 handleAction (Start record) = do
   user <- loadUser (UserId record.userId)
-  updateUser (merge {active:true} user) |> map (\_->unit)
+  updateUser (merge { active: true } user) |> map (\_ -> unit)
 
 handleAction (Stop record) = do
   user <- loadUser (UserId record.userId)
-  updateUser (merge {active:false} user) |> map (\_->unit)
+  updateUser (merge { active: false } user) |> map (\_ -> unit)
 
 handleAction (Clear record) = do
   user <- loadUser (UserId record.userId)
   deleteUserLogEntries user.userId
-
 
 -- TRIGGERS
 shallExeute :: Instant -> TriggerWithState -> Boolean
